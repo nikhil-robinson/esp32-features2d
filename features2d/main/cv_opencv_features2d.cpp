@@ -34,15 +34,15 @@
 using namespace std;
 using namespace cv;
 
-extern "C" long int sysconf(int);
+extern long int sysconf(int);
 
 long int sysconf(int wtf)
 {
     return 1;
 }
 
-extern "C" void init_opencv_features2d();
-extern "C" void test_opencv_features2d(uint8_t* data, int width, int heigth);
+extern void init_opencv_features2d();
+extern void test_opencv_features2d(uint8_t* data, int width, int heigth);
 cv::Ptr<cv::ORB> orb_detector;
 std::vector<cv::KeyPoint> mvKeys;
 cv::Mat mDescriptors;
