@@ -1,11 +1,10 @@
-#include "who_camera.h"
+#include "camera.h"
 
 #include "esp_log.h"
 #include "esp_system.h"
 
-#if __has_include("bsp/display.h")
-#include "bsp/display.h"
-
+#if __has_include("bsp/esp-bsp.h")
+#include "bsp/esp-bsp.h"
 
 static const char *TAG = "who_camera";
 static QueueHandle_t xQueueFrameO = NULL;
@@ -15,8 +14,12 @@ static void task_process_handler(void *arg)
     while (true)
     {
         camera_fb_t *frame = esp_camera_fb_get();
-        if (frame)
-            xQueueSend(xQueueFrameO, &frame, portMAX_DELAY);
+        if (!frame)
+        {
+            ESP_LOGE(TAG, "Camera Capture Failed");
+            continue;
+        }
+        xQueueSend(xQueueFrameO, &frame, portMAX_DELAY);
     }
 }
 
@@ -25,22 +28,7 @@ void register_camera(const pixformat_t pixel_fromat,
                      const uint8_t fb_count,
                      const QueueHandle_t frame_o)
 {
-    ESP_LOGI(TAG, "Camera module is %s", CAMERA_MODULE_NAME);
-
-#if CONFIG_CAMERA_MODULE_ESP_EYE || CONFIG_CAMERA_MODULE_ESP32_CAM_BOARD
-    /* IO13, IO14 is designed for JTAG by default,
-     * to use it as generalized input,
-     * firstly declair it as pullup input */
-    gpio_config_t conf;
-    conf.mode = GPIO_MODE_INPUT;
-    conf.pull_up_en = GPIO_PULLUP_ENABLE;
-    conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
-    conf.intr_type = GPIO_INTR_DISABLE;
-    conf.pin_bit_mask = 1LL << 13;
-    gpio_config(&conf);
-    conf.pin_bit_mask = 1LL << 14;
-    gpio_config(&conf);
-#endif
+    // ESP_LOGI(TAG, "Camera module is %s", CAMERA_MODULE_NAME);
 
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
@@ -78,19 +66,13 @@ void register_camera(const pixformat_t pixel_fromat,
     }
 
     sensor_t *s = esp_camera_sensor_get();
-    if (s->id.PID == OV3660_PID || s->id.PID == OV2640_PID) {
-        s->set_vflip(s, 1); //flip it back    
-    } else if (s->id.PID == GC0308_PID) {
-        s->set_hmirror(s, 0);
-    } else if (s->id.PID == GC032A_PID) {
-        s->set_vflip(s, 1);
-    }
+    ESP_LOGI("CAM", "Camera sensor %2.2x %2.2x %4.4x %2.2x", s->id.MIDH, s->id.MIDL, s->id.PID, s->id.VER);
 
-    //initial sensors are flipped vertically and colors are a bit saturated
+    // initial sensors are flipped vertically and colors are a bit saturated
     if (s->id.PID == OV3660_PID)
     {
-        s->set_brightness(s, 1);  //up the blightness just a bit
-        s->set_saturation(s, -2); //lower the saturation
+        s->set_brightness(s, 1);  // up the blightness just a bit
+        s->set_saturation(s, -2); // lower the saturation
     }
 
     xQueueFrameO = frame_o;

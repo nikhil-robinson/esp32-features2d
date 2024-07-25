@@ -1,9 +1,8 @@
 #include "esp_log.h"
-#include "who_lcd.h"
+#include "lcd.h"
 #include "esp_camera.h"
 #include "esp_lcd_panel_ops.h"
 #include <string.h>
-#include "logo_en_240x240_lcd.h"
 
 #if __has_include("bsp/display.h")
 #include "bsp/display.h"

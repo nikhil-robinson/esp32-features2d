@@ -7,7 +7,7 @@
 
 #include "esp_camera.h"
 
-#define XCLK_FREQ_HZ 10000000
+#define XCLK_FREQ_HZ 20000000
 
 #ifdef __cplusplus
 extern "C"
