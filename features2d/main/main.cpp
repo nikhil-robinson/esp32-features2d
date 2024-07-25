@@ -7,10 +7,10 @@ static QueueHandle_t xQueueLCDFrame = NULL;
 
 extern "C" void app_main(void)
 {
-    xQueueAIFrame = xQueueCreate(1, sizeof(camera_fb_t *));
-    xQueueLCDFrame = xQueueCreate(1, sizeof(camera_fb_t *));
+    xQueueAIFrame = xQueueCreate(2, sizeof(camera_fb_t *));
+    xQueueLCDFrame = xQueueCreate(2, sizeof(camera_fb_t *));
 
-    register_camera(PIXFORMAT_GRAYSCALE, FRAMESIZE_240X240, 1, xQueueAIFrame);
-    register_cv_2d_feature(xQueueAIFrame, NULL, NULL, NULL, true);
-    // register_lcd(xQueueLCDFrame, NULL, true);
+    register_camera(PIXFORMAT_RGB565, FRAMESIZE_240X240, 2, xQueueAIFrame);
+    register_cv_2d_feature(xQueueAIFrame, NULL, NULL, xQueueLCDFrame, false);
+    register_lcd(xQueueLCDFrame, NULL, true);
 }

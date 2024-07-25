@@ -49,8 +49,6 @@ esp_err_t register_lcd(const QueueHandle_t frame_i, const QueueHandle_t frame_o,
 
     app_lcd_set_color(0x000000);
     vTaskDelay(pdMS_TO_TICKS(200));
-    app_lcd_draw_wallpaper();
-    vTaskDelay(pdMS_TO_TICKS(200));
 
     xQueueFrameI = frame_i;
     xQueueFrameO = frame_o;

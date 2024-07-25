@@ -76,7 +76,7 @@ void register_camera(const pixformat_t pixel_fromat,
     }
 
     xQueueFrameO = frame_o;
-    xTaskCreatePinnedToCore(task_process_handler, TAG, 3 * 1024, NULL, 5, NULL, 1);
+    xTaskCreatePinnedToCore(task_process_handler, TAG, 3 * 1024, NULL, 5, NULL, 0);
 }
 
 #endif // __has_include("bsp/display.h")

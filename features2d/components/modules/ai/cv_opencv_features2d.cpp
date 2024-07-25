@@ -140,7 +140,7 @@ void register_cv_2d_feature(const QueueHandle_t frame_i,
     xQueueResult = result;
     gReturnFB = camera_fb_return;
 
-    xTaskCreatePinnedToCore(task_process_handler, "2d_feature_process", 16384, NULL, 5, NULL, 0);
+    xTaskCreatePinnedToCore(task_process_handler, "2d_feature_process", 16384, NULL, 5, NULL, 1);
     if (xQueueEvent)
         xTaskCreatePinnedToCore(task_event_handler, "2dfeature", 1 * 1024, NULL, 5, NULL, 1);
 }
