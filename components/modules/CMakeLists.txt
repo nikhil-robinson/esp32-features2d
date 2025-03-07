@@ -7,6 +7,6 @@ set(requires
                 opencv
                 esp32_s3_eye)
 
-idf_component_register( SRC_DIRS ai camera lcd fb_gfx
-                        INCLUDE_DIRS ai camera lcd fb_gfx
+idf_component_register( SRC_DIRS ai camera lcd fb_gfx base
+                        INCLUDE_DIRS ai camera lcd fb_gfx base
                         REQUIRES ${requires})

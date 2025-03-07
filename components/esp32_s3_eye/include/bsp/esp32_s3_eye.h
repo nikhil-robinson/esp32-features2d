@@ -78,6 +78,8 @@
 #define BSP_CAMERA_D5        (GPIO_NUM_18)
 #define BSP_CAMERA_D6        (GPIO_NUM_17)
 #define BSP_CAMERA_D7        (GPIO_NUM_16)
+#define BSP_CAMERA_PWDN      (-1)
+#define BSP_CAMERA_RESET      (-1)
 
 /* uSD card */
 #define BSP_SD_D0            (GPIO_NUM_40)

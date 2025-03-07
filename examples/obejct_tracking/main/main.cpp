@@ -1,16 +1,18 @@
-#include "camera.h"
-#include "cv_opencv_features2d.hpp"
-#include "lcd.h"
+#include "camera.hpp"
+#include "AppFeature2D.hpp"
+#include "lcd.hpp"
 
-static QueueHandle_t xQueueAIFrame = NULL;
-static QueueHandle_t xQueueLCDFrame = NULL;
-
-extern "C" void app_main(void)
+extern "C" void app_main()
 {
-    xQueueAIFrame = xQueueCreate(2, sizeof(camera_fb_t *));
-    xQueueLCDFrame = xQueueCreate(2, sizeof(camera_fb_t *));
+    QueueHandle_t xQueueFrame_0 = xQueueCreate(2, sizeof(camera_fb_t *));
+    QueueHandle_t xQueueFrame_1 = xQueueCreate(2, sizeof(camera_fb_t *));
 
-    register_camera(PIXFORMAT_RGB565, FRAMESIZE_240X240, 2, xQueueAIFrame);
-    register_cv_2d_feature(xQueueAIFrame, NULL, NULL, xQueueLCDFrame, false);
-    register_lcd(xQueueLCDFrame, NULL, true);
+
+    AppCamera *camera = new AppCamera(PIXFORMAT_RGB565, FRAMESIZE_240X240, 2, xQueueFrame_0);
+    AppFeature2D *feature = new AppFeature2D(xQueueFrame_0, xQueueFrame_1);
+    AppLCD *lcd = new AppLCD(xQueueFrame_1);
+
+    lcd->run();
+    feature->run();
+    camera->run();
 }

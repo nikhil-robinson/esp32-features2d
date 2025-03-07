@@ -1,4 +1,4 @@
-#include "camera.h"
+#include "camera.hpp"
 
 #include "esp_log.h"
 #include "esp_system.h"
@@ -6,29 +6,28 @@
 #if __has_include("bsp/esp-bsp.h")
 #include "bsp/esp-bsp.h"
 
-static const char *TAG = "who_camera";
-static QueueHandle_t xQueueFrameO = NULL;
+const static char TAG[] = "Camera";
 
-static void task_process_handler(void *arg)
-{
-    while (true)
-    {
-        camera_fb_t *frame = esp_camera_fb_get();
-        if (!frame)
-        {
-            ESP_LOGE(TAG, "Camera Capture Failed");
-            continue;
-        }
-        xQueueSend(xQueueFrameO, &frame, portMAX_DELAY);
-    }
-}
-
-void register_camera(const pixformat_t pixel_fromat,
+AppCamera::AppCamera(const pixformat_t pixel_fromat,
                      const framesize_t frame_size,
                      const uint8_t fb_count,
-                     const QueueHandle_t frame_o)
+                     QueueHandle_t queue_o) : Frame(nullptr, queue_o, nullptr)
 {
-    // ESP_LOGI(TAG, "Camera module is %s", CAMERA_MODULE_NAME);
+
+#if CONFIG_CAMERA_MODEL_ESP_EYE || CONFIG_CAMERA_MODEL_ESP32_CAM_BOARD
+    /* IO13, IO14 is designed for JTAG by default,
+     * to use it as generalized input,
+     * firstly declair it as pullup input */
+    gpio_config_t conf;
+    conf.mode = GPIO_MODE_INPUT;
+    conf.pull_up_en = GPIO_PULLUP_ENABLE;
+    conf.pull_down_en = GPIO_PULLDOWN_DISABLE;
+    conf.intr_type = GPIO_INTR_DISABLE;
+    conf.pin_bit_mask = 1LL << 13;
+    gpio_config(&conf);
+    conf.pin_bit_mask = 1LL << 14;
+    gpio_config(&conf);
+#endif
 
     camera_config_t config;
     config.ledc_channel = LEDC_CHANNEL_0;
@@ -45,10 +44,10 @@ void register_camera(const pixformat_t pixel_fromat,
     config.pin_pclk = BSP_CAMERA_PCLK;
     config.pin_vsync = BSP_CAMERA_VSYNC;
     config.pin_href = BSP_CAMERA_HSYNC;
-    config.pin_sscb_sda = BSP_I2C_SDA;
-    config.pin_sscb_scl = BSP_I2C_SCL;
-    config.pin_pwdn = -1;
-    config.pin_reset = -1;
+    config.pin_sccb_sda = BSP_I2C_SDA;
+    config.pin_sccb_scl = BSP_I2C_SCL;
+    config.pin_pwdn = BSP_CAMERA_PWDN;
+    config.pin_reset = BSP_CAMERA_RESET;
     config.xclk_freq_hz = XCLK_FREQ_HZ;
     config.pixel_format = pixel_fromat;
     config.frame_size = frame_size;
@@ -66,17 +65,37 @@ void register_camera(const pixformat_t pixel_fromat,
     }
 
     sensor_t *s = esp_camera_sensor_get();
-    ESP_LOGI("CAM", "Camera sensor %2.2x %2.2x %4.4x %2.2x", s->id.MIDH, s->id.MIDL, s->id.PID, s->id.VER);
-
+    s->set_vflip(s, 1); // flip it back
     // initial sensors are flipped vertically and colors are a bit saturated
     if (s->id.PID == OV3660_PID)
     {
         s->set_brightness(s, 1);  // up the blightness just a bit
         s->set_saturation(s, -2); // lower the saturation
     }
-
-    xQueueFrameO = frame_o;
-    xTaskCreatePinnedToCore(task_process_handler, TAG, 3 * 1024, NULL, 5, NULL, 0);
+    s->set_sharpness(s, 2);
+    s->set_awb_gain(s, 2);
 }
+
+static void task(AppCamera *self)
+{
+    ESP_LOGD(TAG, "Start");
+    while (true)
+    {
+        if (self->queue_o == nullptr)
+            break;
+
+        camera_fb_t *frame = esp_camera_fb_get();
+        if (frame)
+            xQueueSend(self->queue_o, &frame, portMAX_DELAY);
+    }
+    ESP_LOGD(TAG, "Stop");
+    vTaskDelete(NULL);
+}
+
+void AppCamera::run()
+{
+    xTaskCreatePinnedToCore((TaskFunction_t)task, TAG, 2 * 1024, this, 5, NULL, 0);
+}
+
 
 #endif // __has_include("bsp/display.h")
